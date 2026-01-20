@@ -3,7 +3,7 @@ import aiohttp
 from homeassistant import config_entries
 import homeassistant.helpers.config_validation as cv
 
-DOMAIN = "hjem_is"
+DOMAIN = "hjem-is"
 
 class HjemIsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1

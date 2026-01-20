@@ -1,0 +1,10 @@
+{
+  "domain": "hjem-is",
+  "name": "Hjem-Is",
+  "version": "1.0.1",
+  "documentation": "https://github.com/supersej/Hjem-Is",
+  "dependencies": [],
+  "codeowners": [],
+  "requirements": [],
+  "config_flow": true
+}
