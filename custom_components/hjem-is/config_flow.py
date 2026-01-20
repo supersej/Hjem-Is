@@ -10,8 +10,8 @@ class HjemIsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     
     def __init__(self):
         self.coords = {}
-        self.available_stops = {} # ID -> "Adresse (Tid)"
-        self.stop_details = {}    # ID -> "Ren Adresse"
+        self.available_stops = {}
+        self.stop_details = {}
 
     async def async_step_user(self, user_input=None):
         errors = {}
@@ -22,19 +22,20 @@ class HjemIsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not stops:
                     errors["base"] = "no_stops_found"
                 else:
-                    # Sorterer listen alfabetisk på adressenavn
                     stops.sort(key=lambda x: x["address"])
                     
-                    # Gemmer data til dropdown
+                    # 1. Tilføj muligheden for at vælge ALLE
                     self.available_stops = {
-                        str(stop["id"]): f"{stop['address']} ({stop['google_estimate_time'][11:16]})"
-                        for stop in stops
+                        "all": "🌟 Hent ALLE stop på ruten (Opretter sensor for hver)"
                     }
-                    # Gemmer rent vejnavn til senere brug
-                    self.stop_details = {
-                        str(stop["id"]): stop['address'].split(',')[0] # F.eks "Musvågevej 3"
-                        for stop in stops
-                    }
+                    
+                    # 2. Tilføj de enkelte stop som før
+                    for stop in stops:
+                        stop_id = str(stop["id"])
+                        self.available_stops[stop_id] = f"{stop['address']} ({stop['google_estimate_time'][11:16]})"
+                        # Gem vejnavn til sensor-navngivning
+                        self.stop_details[stop_id] = stop['address'].split(',')[0]
+                        
                     return await self.async_step_pick_stop()
             except Exception:
                 errors["base"] = "cannot_connect"
@@ -51,14 +52,20 @@ class HjemIsConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_pick_stop(self, user_input=None):
         if user_input is not None:
             stop_id = user_input["stop_id"]
-            # Vi gemmer den rene adresse med, så sensoren kan hedde det
+            
+            # Bestem titel og data baseret på valg
+            if stop_id == "all":
+                title = "Hjem-IS (Hele ruten)"
+                stop_address = "Alle"
+            else:
+                stop_address = self.stop_details[stop_id]
+                title = f"Hjem-IS ({stop_address})"
+
             user_selection = {
                 **self.coords,
-                "selected_stop_id": int(stop_id),
-                "stop_address": self.stop_details[stop_id]
+                "selected_stop_id": stop_id, # Her gemmes enten et ID eller "all"
+                "stop_address": stop_address
             }
-            # Titlen på integrationen i listen
-            title = f"Hjem-IS ({self.stop_details[stop_id]})"
             return self.async_create_entry(title=title, data=user_selection)
 
         return self.async_show_form(
